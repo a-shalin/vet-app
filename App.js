@@ -34,7 +34,6 @@ const styles = StyleSheet.create({
   loginField: {
     width: 100,
     height: 40,
-    
   }
 });
 
@@ -68,8 +67,14 @@ class LoginView extends React.Component {
   }
 
   login = () => {
+    console.log('Logging in');
     const xhr = new XMLHttpRequest();
-    xhr.open("GET", "http://is-vet-master-vet.dev.cloudinfosys.ru/rs/login", true);
-    xhr.setRequestHeader("Content-type", "application/json");
+    xhr.open("POST", "https://app.cloudinfosys.ru/vet/rs/login", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onreadystatechange = (x) => {
+      console.log(x.target.status);
+      console.log(x.target._response);
+    };
+    xhr.send('{user: "xxx", pass: "yyy"}');
   }
 }
