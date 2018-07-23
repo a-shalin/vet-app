@@ -11,9 +11,7 @@ export default class App extends React.Component {
 
   render() {
     if (this.state.user != null) {
-      return ( 
-        <Text>User {this.state.user} logged in application</Text>
-      );
+      return <MainView onLogged={this.onLogged} user={this.state.user} />
     } else {
       return <LoginView onLogged={this.onLogged} />;
     }
@@ -61,20 +59,82 @@ class LoginView extends React.Component {
           secureTextEntry={true}
           onChangeText={(text) => this.setState({pass: text})}
         />
-        <Button title="Log in" onPress={this.login}/>
+        <Button title="Log in" onPress={this.login} disabled={this.state.isLogging}/>
       </View>
     );
   }
 
   login = () => {
     console.log('Logging in');
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "https://app.cloudinfosys.ru/vet/rs/login", true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.onreadystatechange = (x) => {
-      console.log(x.target.status);
-      console.log(x.target._response);
-    };
-    xhr.send('{user: "xxx", pass: "yyy"}');
+    this.setState({isLogging: true});
+    const userPass = 'user=' + encodeURIComponent(this.state.user) + 
+        '&pass=' + encodeURIComponent(this.state.pass);
+
+    fetch("https://app.cloudinfosys.ru/vet/rs/login", {
+      method: 'post',
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+      },
+      body: userPass
+    }).then(resp => {
+      if (resp.status == 200) {
+        console.log("Successfully login");
+        this.props.onLogged(this.state.user);
+      } else 
+      if (resp.status == 409) {
+        resp.json().then(userError => {
+          alert(userError.message);
+          this.setState({isLogging: false});
+        });
+      } else {
+        alert(resp.statusText);
+        this.setState({isLogging: false});
+      }
+    }); 
   }
 }
+
+class MainView extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      isLogouting : false
+    }
+  }
+
+  render() {
+    return (
+      <View>
+        
+        <Button 
+          title={'Log out ' + this.props.user} onPress={this.logout} 
+          disabled={this.state.isLogouting}
+        />
+      </View>
+    );
+  };
+
+  logout = () => {
+    console.log('Logging out');
+    this.setState({isLogouting: true});
+    
+    fetch("https://app.cloudinfosys.ru/vet/rs/logout", {
+      method: 'post'
+    }).then(resp => {
+      if (resp.status == 200) {
+        console.log("Successfully log out");
+        this.props.onLogged(null);
+      } else 
+      if (resp.status == 409) {
+        resp.json().then(userError => {
+          alert(userError.message);
+          this.setState({isLogouting: false});
+       });
+      } else {
+        alert('Error ' + resp.status);
+        this.setState({isLogouting: false});
+      }
+    }); 
+  }
+}
+
